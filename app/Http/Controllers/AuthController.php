@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Services\AuditService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -11,6 +12,11 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     //
+    protected $auditService;
+    public function __construct(AuditService $auditService) {
+        $this->auditService = $auditService;
+    }
+
     public function login(Request $request) {
         $validator = Validator::make($request->all(), [
             'email' => 'required',
@@ -30,6 +36,8 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->firstOrFail();
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        $this->auditService->log('login', "User logged in : {$user->email}", null, $user->toArray());
 
         return response()->json([
             'success' => true,
@@ -54,7 +62,10 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => 'voter'
         ]);
+
+        $this->auditService->log('register', "User registered: {$user->email}", null, $user->toArray());
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -66,8 +77,13 @@ class AuthController extends Controller
         ], 200);    
     }
 
-    public function logout() {
-        auth()->user()->tokens()->delete();
+    public function logout(Request $request) {
+        $user = $request->user();
+
+        $user->tokens()->delete();
+
+        $this->auditService->log('logout', "User logged out: {$user->email}", null, $user->toArray());
+
         return response()->json([
            'success' => true,
            'message' => 'Logout Success',
@@ -77,6 +93,7 @@ class AuthController extends Controller
 
     public function profile()
     {
-        return response()->json(auth()->user());
+        $user = Auth::user();
+        return response()->json($user);
     }
 }
