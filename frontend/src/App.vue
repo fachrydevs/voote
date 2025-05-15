@@ -1,5 +1,5 @@
-<template>
-  <h1 class="text-red-500">Kelompok 3</h1>
+<template>  
+<router-view></router-view>
 </template>
 
 <script>
