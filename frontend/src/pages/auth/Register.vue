@@ -6,7 +6,7 @@
         <p class="text-sm text-gray-500 mt-1">Daftar voote sekarang agar bisa melakukan voting</p>
       </div>
 
-      <form @submit.prevent="handleRegister" class="space-y-4">
+      <form @submit.prevent="register" class="space-y-4">
         <div>
           <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
           <div class="mt-1 relative">
@@ -48,7 +48,10 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import api from'@/services/axios'
 
+const router = useRouter();
 const username = ref('')
 const email = ref('')
 const password = ref('')
@@ -58,8 +61,20 @@ const togglePassword = () => {
   showPassword.value = !showPassword.value
 }
 
-const handleRegister = () => {
-  console.log('Daftar dengan:', username.value, email.value, password.value)
-  // Tambahkan logika registrasi di sini (API, validasi, dll)
-}
+const register = async () => {
+    try {
+        const response = await api.post('v1/register', {
+            name: username.value,
+            email: email.value,
+            password: password.value,
+        });
+
+        console.log(response);
+
+        router.push('/')
+    } catch (error) {
+        console.log(error.response);
+        alert('Register Gagal:' + error.response?.data?.message || error.message);
+    }
+};
 </script>

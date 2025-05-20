@@ -6,7 +6,7 @@
         <p class="text-sm text-gray-500 mt-1">Masuk terlebih dahulu sebelum melakukan voting</p>
       </div>
 
-      <form @submit.prevent="handleLogin" class="space-y-4">
+      <form @submit.prevent="login" class="space-y-4">
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
           <div class="mt-1 relative">
@@ -41,8 +41,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
+import api from '@/services/axios';
+import { useRouter } from 'vue-router'
 
+const router = useRouter();
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -51,8 +54,22 @@ const togglePassword = () => {
   showPassword.value = !showPassword.value
 }
 
-const handleLogin = () => {
-  console.log('Login dengan', email.value, password.value)
-  // Tambahkan logika autentikasi di sini
-}
+const login = async () => {
+    try {
+        const response = await api.post('/v1/login', {
+            email: email.value,
+            password: password.value,
+        });
+
+        console.log(response);
+
+        router.push('/')
+
+        localStorage.setItem('token', response.data.token);
+        alert('Login Berhasil !');
+    } catch (error) {
+        console.log(error.response);
+        alert('Login Gagal:' + error.response?.data?.message || error.message);
+    }
+};
 </script>
