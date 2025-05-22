@@ -19,6 +19,12 @@ const router = createRouter({
         {
             path: "/register",
             component: Register
+        },
+
+        {
+        path: '/howtovote',
+        name: 'HowToVote',
+        component: () => import('../pages/Howtovote.vue')
         }
   ],
 })
