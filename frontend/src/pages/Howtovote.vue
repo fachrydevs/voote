@@ -19,7 +19,7 @@
 
       <!-- Step 1 -->
       <div class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
-        <h3 class="text-lg font-semibold mb-3">➊ Select the election</h3>
+        <h3 class="text-lg font-semibold mb-3">➊ Select the election you want to vote</h3>
         <div class="bg-white border rounded-lg shadow-md overflow-hidden">
         <div class="bg-gray-200 h-40 flex items-center justify-center">
           <div class="flex space-x-4">
