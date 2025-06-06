@@ -24,7 +24,14 @@ class ElectionController extends Controller
     public function index()
     {
         //
-        $elections = Election::with(['creator', 'candidates'])->paginate('10');
+        $elections = Election::all();
+        return response()->json($elections);
+       
+    }
+    public function getActiveElections() {
+        $elections = Election::where('is_active', true)
+            ->with(['creator', 'candidates'])
+            ->paginate(10);
 
         return response()->json($elections);
     }
@@ -42,62 +49,77 @@ class ElectionController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-            'is_active' =>'boolean',
-            'candidates' => 'required|array|min:1',
-            'candidates.*.name' => 'required|string|max:255',
-            'candidates.*.description' => 'required|string',
-            'candidates.*.image' => 'nullable|string',
-            'candidates.*.order_number' => 'required|integer'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 400);
-        }
-
-        DB::beginTransaction();
         try {
+            DB::beginTransaction();
+            
+            // Create the election first
             $election = Election::create([
                 'title' => $request->title,
                 'description' => $request->description,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
-                'is_active' => $request->is_active,
-                'created_by' => Auth::id(),
+                'is_active' => $request->is_active
             ]);
-
-            foreach ($request->candidates as $candidateData) {
-                $candidate = new Candidate([
-                    'name' => $candidateData['name'],
-                    'description' => $candidateData['description'],
-                    'image' => $candidateData['image'] ?? null,
-                    'order_number' => $candidateData['order_number']
-                ]);
-                $election->candidates()->save($candidate);
+    
+            // Then handle the candidates
+            if ($request->has('candidates')) {
+                // 2. Gunakan Transaksi Database
+                // Ini memastikan semua kandidat berhasil disimpan, atau tidak sama sekali.
+                DB::beginTransaction();
+                try {
+                    foreach ($request->candidates as $index => $candidateData) {
+                        $imageUrl = null;
+            
+                        // Cek apakah ada file gambar untuk kandidat ini
+                        if ($request->hasFile("candidates.{$index}.image")) {
+                            $image = $request->file("candidates.{$index}.image");
+                            
+                            // 3. Simpan file ke disk 'public'
+                            // Laravel akan otomatis generate nama unik. Path ini akan disimpan di database.
+                            // Contoh path yang tersimpan: 'candidates/asdf89asdf98asdf.jpg'
+                            $imagePath = $image->store('candidates', 'public');
+                            
+                            // Simpan path relatif ini ke database
+                            $imageUrl = $imagePath;
+                        }
+            
+                        $candidate = new Candidate([
+                            'name'         => $candidateData['name'],
+                            'description'  => $candidateData['description'],
+                            'order_number' => $candidateData['order_number'],
+                            'image'        => $imageUrl,
+                            'election_id'  => $election->id,
+                        ]);
+                        
+                        // Simpan kandidat
+                        $candidate->save(); // Atau bisa juga: $election->candidates()->save($candidate);
+                    }
+                    
+                    // Jika semua berhasil, commit transaksi
+                    DB::commit();
+            
+                } catch (\Exception $e) {
+                    // Jika terjadi error, batalkan semua yang sudah disimpan
+                    DB::rollBack();
+                    
+                    // Kembalikan response error
+                    return response()->json([
+                        'message' => 'Terjadi kesalahan saat menyimpan kandidat.',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
             }
-
             DB::commit();
-
-            $this->auditService->log(
-                'Election Created', 
-                "Election created with " . count($request->candidates) . " candidates: {$election->title}", 
-                null, 
-                $election->load('candidates')->toArray()
-            );
-
+    
             return response()->json([
-                'message' => 'Election and candidates created successfully',
-                'election' => $election->load('candidates')
+                'message' => 'Election created successfully',
+                'data' => $election->load('candidates')
             ], 201);
-
+    
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'message' => 'Failed to create election and candidates',
+                'message' => 'Failed to create election',
                 'error' => $e->getMessage()
             ], 500);
         }
