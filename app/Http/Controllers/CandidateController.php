@@ -48,7 +48,7 @@ class CandidateController extends Controller
         $validator = Validator::make($request->all(), [
             'name' =>'required|string|max:255',
             'description' =>'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'image' => 'nullable|string',
             'order_number' =>'required|integer|min:1',
         ]);
         if ($validator->fails()) {

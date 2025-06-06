@@ -13,6 +13,7 @@
             <input v-model="username" type="text" id="username" class="w-full border border-gray-300 rounded px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-purple-500" />
             <span class="absolute inset-y-0 right-3 flex items-center text-gray-400">👤</span>
           </div>
+          <span class="text-xs text-red-500" v-if="errorMsg.name">{{ errorMsg.name[0] }}</span>
         </div>
 
         <div>
@@ -21,6 +22,7 @@
             <input v-model="email" type="email" id="email" class="w-full border border-gray-300 rounded px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-purple-500" />
             <span class="absolute inset-y-0 right-3 flex items-center text-gray-400">📧</span>
           </div>
+          <span class="text-xs text-red-500" v-if="errorMsg.email">{{ errorMsg.email[0] }}</span>
         </div>
 
         <div>
@@ -31,6 +33,7 @@
               {{ showPassword ? '🙈' : '👁️' }}
             </span>
           </div>
+          <span class="text-xs text-red-500" v-if="errorMsg.password">{{ errorMsg.password[0] }}</span>
         </div>
 
         <button type="submit" class="w-full bg-purple-600 text-white font-semibold py-2 rounded hover:bg-purple-700 shadow-md">
@@ -56,6 +59,7 @@ const username = ref('')
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
+const errorMsg = ref('')
 
 const togglePassword = () => {
   showPassword.value = !showPassword.value
@@ -71,10 +75,11 @@ const register = async () => {
 
         console.log(response);
 
-        router.push('/')
+        router.push('/login')
     } catch (error) {
         console.log(error.response);
         alert('Register Gagal:' + error.response?.data?.message || error.message);
+        errorMsg.value = error.response.data
     }
 };
 </script>

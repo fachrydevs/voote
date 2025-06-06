@@ -17,32 +17,63 @@ class DashboardController extends Controller
     //     $this->middleware(['auth', 'admin']);
     // }
 
-    public function statistics() {
+    public function statistics(Request $request) {
+        $query = Vote::query();
+        $electionQuery = Election::query();
+        
+        if ($request->has('election_id')) {
+            $query->where('election_id', $request->election_id);
+            $electionQuery->where('id', $request->election_id);
+        }
+    
         $totalUsers = User::count();
-        $totalElections = Election::count();
-        $totalVotes = Vote::count();
-        $activeElections = Election::where('is_active', true)
+        $totalElections = $electionQuery->count();
+        $totalVotes = $query->count();
+        $activeElections = $electionQuery->where('is_active', true)
             ->where('start_date', '<=', now())
-            ->where('end_date', '>=', now())->count();
-
-
-            $votesPerDay = Vote::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
+            ->where('end_date', '>=', now())
+            ->count();
+    
+        $votesPerDay = $query->select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
             ->whereDate('created_at', '>=', now()->subDays(7))
             ->groupBy('date')
             ->orderBy('date')
             ->get();
         
-        // Users per role
+        // Users per role tetap sama karena ini statistik global
         $usersByRole = User::select('role', DB::raw('count(*) as count'))
             ->groupBy('role')
             ->get();
         
-        // Top 5 elections by vote count
-        $topElections = Election::withCount('votes')
+        // Top 5 elections difilter jika ada election_id
+        $topElectionsQuery = Election::withCount('votes');
+        if ($request->has('election_id')) {
+            $topElectionsQuery->where('id', $request->election_id);
+        }
+        $topElections = $topElectionsQuery
             ->orderBy('votes_count', 'desc')
             ->limit(5)
             ->get(['id', 'title', 'votes_count']);
         
+        // Tambahkan data kandidat jika election_id ada
+        $candidates = [];
+        if ($request->has('election_id')) {
+            $election = Election::with('candidates.votes')->findOrFail($request->election_id);
+            $totalVotesInElection = $election->votes()->count();
+            
+            $candidates = $election->candidates->map(function($candidate) use ($totalVotesInElection) {
+                $votesCount = $candidate->votes()->count();
+                return [
+                    'id' => $candidate->id,
+                    'name' => $candidate->name,
+                    'votes_count' => $votesCount,
+                    'percentage' => $totalVotesInElection > 0 
+                        ? round(($votesCount / $totalVotesInElection) * 100, 1)
+                        : 0
+                ];
+            });
+        }
+    
         return response()->json([
             'total_users' => $totalUsers,
             'total_elections' => $totalElections,
@@ -51,6 +82,7 @@ class DashboardController extends Controller
             'votes_per_day' => $votesPerDay,
             'users_by_role' => $usersByRole,
             'top_elections' => $topElections,
+            'candidates' => $candidates // tambahkan ini
         ]);
     }
 

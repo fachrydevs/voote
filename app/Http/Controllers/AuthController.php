@@ -44,6 +44,7 @@ class AuthController extends Controller
             'message' => 'Login Success',
             'access_token' => $token,
             'token_type' => 'Bearer',
+            'user' => $user,
         ], 200);
     }
 
@@ -67,7 +68,7 @@ class AuthController extends Controller
 
         $this->auditService->log('register', "User registered: {$user->email}", null, $user->toArray());
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken('access_token')->plainTextToken;
 
         return response()->json([
             'success' => true,

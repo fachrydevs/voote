@@ -1,15 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-white via-purple-50 to-purple-100 p-8 font-sans text-black">
+  <div class="min-h-screen bg-white px-6 py-4">
     <!-- Navbar -->
-    <nav class="flex items-center justify-between border-b border-purple-300 pb-4 mb-8">
-      <h1 class="text-2xl font-bold text-purple-700">voote</h1>
-      <div class="flex items-center gap-4">
-        <a href="#" class="text-sm text-gray-700 hover:text-purple-600 transition">How to vote</a>
-        <button class="bg-purple-600 text-white px-4 py-1.5 rounded-md hover:bg-purple-700 transition text-sm font-medium">
-          Login
-        </button>
-      </div>
-    </nav>
+   <Navbar/>
 
     <!-- Title -->
     <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">How to Vote</h2>
@@ -65,8 +57,8 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'HowToVote'
-}
+<script setup>
+import Navbar from '@/components/Navbar.vue'
+
+
 </script>

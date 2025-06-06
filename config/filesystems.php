@@ -33,9 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
             'throw' => false,
-            'report' => false,
+            'serve' => true,
+           
         ],
 
         'public' => [
@@ -44,7 +44,7 @@ return [
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
             'throw' => false,
-            'report' => false,
+            
         ],
 
         's3' => [

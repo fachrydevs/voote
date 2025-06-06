@@ -15,6 +15,7 @@
               📧
             </span>
           </div>
+            <span class="text-xs text-red-500" v-if="errorMsg.email">{{ errorMsg.email[0] }}</span>
         </div>
 
         <div>
@@ -25,6 +26,7 @@
               {{ showPassword ? '🙈' : '👁️' }}
             </span>
           </div>
+            <span class="text-xs text-red-500" v-if="errorMsg.password">{{ errorMsg.password[0] }}</span>
         </div>
 
         <button type="submit" class="w-full bg-purple-600 text-white font-semibold py-2 rounded hover:bg-purple-700 shadow-md">
@@ -44,15 +46,21 @@
 import { ref } from 'vue';
 import api from '@/services/axios';
 import { useRouter } from 'vue-router'
+import { parse } from 'vue/compiler-sfc';
+import Swal from 'sweetalert2';
 
 const router = useRouter();
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
+const errorMsg = ref('')
 
 const togglePassword = () => {
   showPassword.value = !showPassword.value
 }
+
+
+
 
 const login = async () => {
     try {
@@ -60,16 +68,26 @@ const login = async () => {
             email: email.value,
             password: password.value,
         });
-
-        console.log(response);
-
+        localStorage.setItem('token', response.data.access_token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('role', response.data.user.role);
+       
         router.push('/')
-
-        localStorage.setItem('token', response.data.token);
-        alert('Login Berhasil !');
+        
+   
     } catch (error) {
-        console.log(error.response);
-        alert('Login Gagal:' + error.response?.data?.message || error.message);
+        console.log(error.response.data);
+        errorMsg.value = error.response.data
+        console.log(error)
+
+        if (error.response.status === 401) {
+           Swal.fire({
+                title: 'Error!',
+                text: 'Email atau password salah',
+                icon: 'error',
+                confirmButtonColor: '#9333EA'
+            });
+        }
     }
 };
 </script>
